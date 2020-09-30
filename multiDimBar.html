@@ -1,0 +1,307 @@
+<html>
+
+<head>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.js"></script>
+
+
+    <style type="text/css">
+        #toolTip {
+            position: absolute;
+            display: none;
+            /* min-width: 168px; */
+            /* width: 168px; */
+            height: auto;
+            background: black;
+            padding: 10px;
+            text-align: left;
+            transform: translate(-50%, -100%);
+            color: white;
+            font-size: 14px;
+            line-height: 18px;
+            z-index: 1;
+            white-space: normal;
+        }
+
+        #toolTip::after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid rgb(78, 71, 71);
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translate(-50%, -10%);
+        }
+        .layerLabel{
+          font-size: 12px;
+        }
+        svg{
+          overflow: visible;
+        }
+        .colouredGroup:nth-child(odd) rect{
+          fill: indigo
+        }
+        .colouredGroup:nth-child(even) rect{
+          fill: cyan
+        }
+    </style>
+</head>
+
+<body>
+    <div id="barChart">
+        <div id="tooltip">
+        </div>
+
+
+        <script type="text/javascript">
+let graphData= [{
+    key: "India",
+    values: [{
+      key: "South",
+      values: [{
+        key: "Telangana",
+        values: [{
+          key: "Anantapur",
+          value: 40.62,
+          grpName: "VP"
+        },
+        {
+          key: "Hyderabad",
+          value: 185.33,
+          grpName: "VP"
+        },
+        {
+          key: "Secunderabad",
+          value: 58.67,
+          grpName: "VP"
+        }]
+      },
+      {
+        key: "Andhra Pradesh",
+        values: [{
+          key: "Vizag",
+          value: 40.62,
+          grpName: "VP"
+        },
+        {
+          key: "Araku",
+          value: 185.33,
+          grpName: "VP"
+        },
+        {
+          key: "Tirupati",
+          value: 58.67,
+          grpName: "VP"
+        }]
+      }]
+    },
+    {
+      key: "East",
+      values: [{
+        key: "Bihar",
+        values: [{
+          key: "Ara",
+          value: 40.62,
+          grpName: "VP"
+        },
+        {
+          key: "Chapra",
+          value: 185.33,
+          grpName: "VP"
+        },
+        {
+          key: "Patna",
+          value: 58.67,
+          grpName: "VP"
+        }]
+      },
+      {
+        key: "West Bengal",
+        values: [{
+          key: "Kolkata",
+          value: 40.62,
+          grpName: "VP"
+        },
+        {
+          key: "Kharagpur",
+          value: 185.33,
+          grpName: "VP"
+        },
+        {
+          key: "Siligudi",
+          value: 58.67,
+          grpName: "VP"
+        }]
+      }]
+    }]
+  },
+  {
+    key: "USA",
+    values: [{
+      key: "South",
+      values: [{
+        key: "Albama",
+        values: [{
+          key: "Montgomery",
+          value: 40.62,
+          grpName: "VP"
+        }]
+      },
+      {
+        key: "Miami",
+        values: [{
+          key: "Florida",
+          value: 40.62,
+          grpName: "VP"
+        }]
+      }]
+    },
+    {
+      key: "East",
+      values: [{
+        key: "Vermont",
+        values: [{
+          key: "Montpelier",
+          value: 40.62,
+          grpName: "VP"
+        }]
+      },
+      {
+        key: "Michigan",
+        values: [{
+          key: "Lansing",
+          value: 40.62,
+          grpName: "VP"
+        }]
+      }]
+    }]
+  }
+  ];
+
+let containerDim={
+width:1000,
+height:300
+};
+let margin={
+top:10,
+bottom:30,
+left:30,
+right:30
+}
+let yAxisLablesList=[];
+let xAxisLablesList=[];
+let labelMap=[];
+
+let svg=d3.select('#barChart')
+.append('svg')
+.attr('width',containerDim.width)
+.attr('height',containerDim.height);
+
+let width=containerDim.width-margin.left-margin.right;
+let height=containerDim.height-margin.top-margin.bottom;
+
+let g=svg.append('g')
+.attr('width',width)
+.attr('height',height)
+.attr('transform','translate('+margin.left+','+margin.top+')');
+
+let tooltip=d3.select('#barChart #tooltip');
+
+let x=d3.scaleBand()
+.range([0,width])
+.domain(graphData.map((d)=>{return d.key})).padding(0.3);
+
+yAxisMining(graphData);
+
+let x2=d3.scaleBand()
+.range([0,width])
+.domain(xAxisLablesList).padding(0.3);
+
+let y=d3.scaleLinear()
+.range([height,0])
+.domain([0,d3.extent(yAxisLablesList)[1]*1.05]);
+
+let xAxis=d3.axisBottom(x2);
+let yAxis=d3.axisLeft(y);
+
+g.append('g')
+.attr('class','xaxis')
+.call(xAxis)
+.attr('transform','translate(0,'+height+')');
+
+g.append('g')
+.attr('class','yaxis')
+.call(yAxis);
+
+let bars = g.append('g').attr('class','barsContainer');
+
+makeLayer(graphData,bars,x);
+yLablesConstruct();
+
+function makeLayer(obj,container,axis){
+    obj.forEach((e,i)=>{
+        if(e.values){
+            let wrapper = container.append('g').attr('class',e.key+'_class');//.attr("transform",'translate('++')');
+            labelMap.push({label:e.key,container:wrapper});
+            makeLayer(e.values, wrapper, axis);
+        }
+        else{ 
+            container.attr('class','colouredGroup').selectAll('.bar')
+            .data(obj)
+            .enter()
+            .append('g')
+            .attr('class','bar')
+            .append('rect')
+            .attr('width',x2.bandwidth())
+            .attr('height',function(d){
+                return height-y(d.value);
+            })
+            .attr('x',function(d){return x2(d.key)})
+            .attr('y',function(d){return y(d.value)})
+            // .attr('fill','blue')
+        }
+    });
+}
+
+function yAxisMining(obj){
+    obj.forEach(e=>{
+        if(e.values){
+            yAxisMining(e.values);
+        }
+        else{
+            yAxisLablesList.push(e.value)
+            xAxisLablesList.push(e.key)
+        }
+    })
+}
+function yLablesConstruct(){
+  labelMap.forEach((e)=>{
+    let containerDim = e.container.node().getBBox()
+    e.container.append('text')
+    .text(e.label)
+    .attr('class','levelHeading')
+    .attr('x',containerDim.x+containerDim.width/2)
+    .attr('y',height+(100 - 20 * findLayerCount('barsContainer',e.container,0)))
+    .attr('class','layerLabel');
+  });
+  svg.selectAll('.layerLabel').attr('transform',function(d){
+    return 'translate(-'+this.getComputedTextLength()/2+',0)'
+  })
+}
+function findLayerCount(stopNodeClass,element,layerCount){
+  
+  if(element.node().classList.contains(stopNodeClass)){
+    return layerCount
+  }
+  else{
+    return findLayerCount(stopNodeClass,d3.select(element.node().parentElement),++layerCount)
+  }
+}
+        </script>
+</body>
+
+</html>
